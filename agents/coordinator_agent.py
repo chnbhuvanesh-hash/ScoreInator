@@ -1,9 +1,10 @@
 from google import adk
 from agents.validator_agent import validator_agent
 from agents.analyzer_agent import analyzer_agent
-
+from google.adk import Agent, Context
 
 @adk.agent()
+#@Agent(name="coordinator_agent")
 def coordinator_agent(context: adk.Context, github_url: str) -> str:
     """
     Coordinator Agent for Score-inator.

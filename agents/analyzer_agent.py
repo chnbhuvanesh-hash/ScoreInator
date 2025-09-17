@@ -1,8 +1,9 @@
 import requests
 from google import adk
+from google.adk import Agent, Context
 
 
-@adk.agent()
+#@Agent(name="analyzer_agent")
 def analyzer_agent(context: adk.Context, github_url: str) -> dict:
     """
     Analyzer & Scorer Agent.
