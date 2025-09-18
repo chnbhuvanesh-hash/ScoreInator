@@ -48,8 +48,10 @@ adk run
 bash
 Copy code
 ScoreInator/
-│── agents/           # Agent definitions
-│── tools/            # Tools used by agents
+│── agents/analyzer_agent.py
+│── agents/coordinator_agent.py
+│── agents/validator_agent.py   # Agent definitions
+│── tools/github_tools.py          # Tools used by agents
 │── main.py           # Entry point
 │── root_agent.yaml   # Root agent configuration
 │── requirements.txt  # Python dependencies

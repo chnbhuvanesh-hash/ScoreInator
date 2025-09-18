@@ -1,0 +1,62 @@
+# --------------------------------------------------------------------------------
+# Project Multi-Agent Configuration
+# --------------------------------------------------------------------------------
+
+system_info:
+  name: "Project Nexus"
+  version: "1.0.0"
+  description: "A multi-agent system to evaluate and score GitHub projects."
+  
+pipeline:
+  - agent: "code_scout"
+    task: "Perform initial URL validation and repository reconnaissance."
+    on_failure: "terminate"
+    
+  - agent: "architect"
+    task: "Analyze project structure, license, and documentation."
+    
+  - agent: "code_quality"
+    task: "Conduct static code analysis and test coverage checks."
+    
+  - agent: "security_analyst"
+    task: "Scan for security vulnerabilities in dependencies and code."
+    
+  - agent: "community_manager"
+    task: "Evaluate the project's community health and contribution guidelines."
+    
+  - agent: "efficiency_analyst"
+    task: "Assess the project's automation and human effort reduction."
+
+# The 'wow' agents that provide additional, impactful analysis
+special_agents:
+  - agent: "futuristic_analyser"
+    task: "Predict the project's future potential and market viability."
+    run_mode: "parallel"
+    
+  - agent: "ai_contributor"
+    task: "Generate a mock pull request with a suggested improvement."
+    
+  - agent: "pitch_deck_analyst"
+    task: "Analyze the project's presentation materials for a hackathon pitch."
+
+# Finalization and Output
+final_step:
+  - agent: "reporter"
+    task: "Synthesize all agent reports and calculate the final score."
+  
+  - agent: "emailer"
+    task: "Send the final, detailed report via email."
+
+# Agent mapping and details
+agent_definitions:
+  code_scout: { file: "agents/core/code_scout_agent.py", class: "CodeScoutAgent" }
+  architect: { file: "agents/core/architect_agent.py", class: "ArchitectAgent" }
+  code_quality: { file: "agents/analyzer/code_quality_agent.py", class: "CodeQualityAgent" }
+  security_analyst: { file: "agents/analyzer/security_analyst_agent.py", class: "SecurityAnalystAgent" }
+  community_manager: { file: "agents/analyzer/community_manager_agent.py", class: "CommunityManagerAgent" }
+  efficiency_analyst: { file: "agents/core/efficiency_analyst_agent.py", class: "EfficiencyAnalystAgent" }
+  futuristic_analyser: { file: "agents/wow/futuristic_analyser_agent.py", class: "FuturisticAnalyserAgent" }
+  ai_contributor: { file: "agents/wow/ai_contributor_agent.py", class: "AIContributorAgent" }
+  pitch_deck_analyst: { file: "agents/wow/pitch_deck_analyst_agent.py", class: "PitchDeckAnalystAgent" }
+  reporter: { file: "agents/output/reporter_agent.py", class: "ReporterAgent" }
+  emailer: { file: "agents/output/emailer_agent.py", class: "EmailerAgent" }

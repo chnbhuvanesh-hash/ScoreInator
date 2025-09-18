@@ -27,4 +27,4 @@ Thumbs.db
 
 # Google Cloud / credentials
 *.json
-*.yaml
+#*.yaml
