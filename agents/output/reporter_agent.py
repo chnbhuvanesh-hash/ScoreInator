@@ -18,8 +18,17 @@ class ReporterAgent:
         Finalize the report by aggregating all collected agent outputs.
         Returns a dictionary with the final score and details.
         """
-        # Example scoring (replace with your real logic)
-        final_score = sum(i for i in range(len(self.reports))) * 10  
+        # Aggregate real scores from each agent if present
+        total_score = 0
+        count = 0
+        for r in self.reports:
+            result = r.get("result", {})
+            score = result.get("score")
+            if score is not None:
+                total_score += score
+                count += 1
+
+        final_score = round(total_score / count) if count > 0 else 0
 
         report = {
             "timestamp": datetime.utcnow().isoformat(),

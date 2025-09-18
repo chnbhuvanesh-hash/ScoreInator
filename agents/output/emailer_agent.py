@@ -8,30 +8,21 @@ class EmailerAgent:
         Expects `context` to include:
           - recipient_email
           - github_url
-          - final_score
-          - final_report (dictionary of all agent results)
+          - overall_score
         """
         recipient_email = context.get("recipient_email", "no-email@example.com")
         github_url = context.get("github_url", "N/A")
-        final_score = context.get("final_score", 0)
-        final_report = context.get("final_report", {})
+        overall_score = context.get("overall_score", 0)
 
-        print("\n--- EmailerAgent: Preparing Project Analysis Email ---")
-        print(f"To: {recipient_email}")
-        print(f"Subject: ScoreInator Analysis Report for {github_url}\n")
-
-        print(f"Project URL: {github_url}")
-        print(f"Overall Score: {final_score}\n")
-        print("--- Detailed Agent Results ---\n")
-
-        for agent_name, report in final_report.items():
-            print(f"--- {agent_name.replace('_', ' ').title()} ---")
-            for key, value in report.items():
-                print(f"{key.replace('_', ' ').title()}: {value}")
-            print("")  # Blank line between agents
-
-        print("--- EmailerAgent: Email sent successfully ---\n")
-
-        # Update context for orchestrator
-        context["email_status"] = "sent"
-        return {"status": "success", "recipient": recipient_email}
+        if overall_score >= 60:
+            #print("\n--- EmailerAgent: Preparing Project Analysis Email ---")
+            print(f"To: {recipient_email}")
+            #print(f"Subject: ScoreInator Project Assessment - {github_url}\n")
+            #print(f"Below mentioned project has cleared initial or first level of assessment.")
+            #print("Detailed Project analysis details are attached.\n")
+            context["email_status"] = "sent"
+            return {"status": "success", "recipient": recipient_email}
+        else:
+            #print(f"\n--- EmailerAgent: Project did not pass initial assessment (Score: {overall_score}) ---")
+            context["email_status"] = "not_sent"
+            return {"status": "skipped", "recipient": recipient_email, "reason": "Score below 60"}

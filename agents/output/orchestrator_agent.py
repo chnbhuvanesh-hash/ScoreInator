@@ -1,6 +1,8 @@
 import importlib
 import yaml
+import os
 from datetime import datetime
+import json
 
 class OrchestratorAgent:
     def __init__(self, config_file):
@@ -42,114 +44,113 @@ class OrchestratorAgent:
             print(f"➡️ Running {agent_name}...")
 
             try:
-                # Call agent's run or run_analysis if present
+                # Call agent's run or run_analysis
+                result = {}
                 if hasattr(agent_instance, 'run'):
                     result = agent_instance.run(context)
                 elif hasattr(agent_instance, 'run_analysis'):
                     result = agent_instance.run_analysis(context.get("github_url"))
-                else:
-                    result = {}
 
-                # Store result in context and final_report
+                # Ensure 'score' exists
+                if result:
+                    if "score" not in result and "analysis_score" in result:
+                        result["score"] = result["analysis_score"]
+                    result["score"] = result.get("score", 0)
+
+                # Store result
                 report_key = f"{agent_name}_report"
                 self.final_report[report_key] = result
                 context[report_key] = result
 
-                # Stop pipeline on failure if configured
-                if 'on_failure' in step and not result.get('valid', True):
-                    print(f"❌ Orchestrator: {agent_name} failed. Stopping pipeline.")
-                    return False
-
             except Exception as e:
                 print(f"⚠️ Error while running agent '{agent_name}': {e}")
-                continue  # Continue with other agents
+                continue
 
         return True
 
     def run_analysis(self, github_url, recipient_email):
-        """Run full pipeline and build a final report compatible with EmailerAgent."""
+        """Run full pipeline, save report, and print summary."""
         print(f"🔍 Starting analysis for: {github_url}\n")
 
-        context = {
-            "github_url": github_url,
-            "recipient_email": recipient_email,
-        }
-
+        context = {"github_url": github_url, "recipient_email": recipient_email}
         self.final_report = {}
 
-        # Run core pipeline
+        # Run pipelines
         core_pipeline = self.config.get('pipeline', [])
         self._run_pipeline(core_pipeline, context)
-
-        # Run special agents
         special_agents = self.config.get('special_agents', [])
         self._run_pipeline(special_agents, context)
-
-        # Run final step (reporter + emailer)
         final_agents = self.config.get('final_step', [])
         self._run_pipeline(final_agents, context)
 
-        # -------------------------------
-        # Prepare final_report for EmailerAgent
-        # -------------------------------
-        overall_score = 0
-        scored_agents = 0
+        # Compute weighted overall score
+        agent_weights = {
+            "code_scout": 1.0,
+            "architect": 1.0,
+            "code_quality": 2.0,
+            "security_analyst": 2.0,
+            "community_manager": 1.0,
+            "efficiency_analyst": 1.5,
+            "futuristic_analyser": 1.0,
+            "ai_contributor": 1.0,
+            "pitch_deck_analyst": 0.5
+        }
+
+        total_score = 0.0
+        total_weight = 0.0
         detailed_results = []
 
         for agent_key, result in self.final_report.items():
-            agent_name = agent_key.replace("_report", "").replace("_", " ").title()
+            agent_name = agent_key.replace("_report", "")
             if isinstance(result, dict) and "score" in result:
-                overall_score += result["score"]
-                scored_agents += 1
+                weight = agent_weights.get(agent_name, 1.0)
+                total_score += result["score"] * weight
+                total_weight += weight
             detailed_results.append({agent_name: result})
 
-        overall_score = overall_score // scored_agents if scored_agents else 0
+        overall_score = (total_score / total_weight) if total_weight else 0
+        overall_score = round(overall_score, 2)
 
-        # Include reporter summary
-        self.final_report["reporter_report"] = {
-            "timestamp": datetime.now().isoformat(),
-            "final_score": overall_score,
-            "details": detailed_results
-        }
+        # Save detailed report
+        os.makedirs("Reports", exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_file = f"Reports/final_report_{timestamp}.json"
+        with open(report_file, "w") as f:
+            json.dump({
+                "github_url": github_url,
+                "recipient_email": recipient_email,
+                "overall_score": overall_score,
+                "details": self.final_report
+            }, f, indent=4)
 
-        # Include emailer status placeholder
-        self.final_report["emailer_report"] = {
-            "status": "pending",
-            "recipient": recipient_email
-        }
-
-        # -------------------------------
-        # Print nicely formatted console report
-        # -------------------------------
+        # Console report
         print("\n--- ScoreInator Analysis Report ---\n")
         for agent in detailed_results:
             for name, data in agent.items():
-                print(f"--- {name} ---")
+                print(f"--- {name.replace('_',' ').title()} ---")
                 if isinstance(data, dict):
                     for k, v in data.items():
                         print(f"{k.replace('_',' ').title()}: {v}")
                 print()
-        print(f"--- Overall Score: {overall_score} ---")
-        print("="*50)
+        print(f"--- Overall Score: {overall_score}% ---")
+        print("=" * 50)
 
-        # -------------------------------
-        # Simulate EmailerAgent sending email
-        # -------------------------------
-        print("\n--- EmailerAgent: Preparing Project Analysis Email ---")
-        print(f"To: {recipient_email}")
-        print(f"Subject: ScoreInator Analysis Report for {github_url}\n")
-        print(f"Project URL: {github_url}")
-        print(f"Overall Score: {overall_score}\n")
-        print("--- Detailed Agent Results ---\n")
-        for agent in detailed_results:
-            for name, data in agent.items():
-                print(f"--- {name} ---")
-                if isinstance(data, dict):
-                    for k, v in data.items():
-                        print(f"{k.replace('_',' ').title()}: {v}")
-                print()
-        print("--- EmailerAgent: Email sent successfully ---\n")
+        # Emailer summary
+        print()
+        if overall_score >= 60:
+            print("Below mentioned project has cleared the first level of assessment.")
+            print("Detailed project analysis is attached in the report file.\n")
+            print("--- EmailerAgent: Email sent successfully ---\n")
+            print("✅ ScorInation Bot : Successfully Validated the Provided Hackathon Project.")
+        else:
+            print("Pass mark is 60%.")
+            print("❌ Project did not clear the first level of assessment.")
+            print(f"📂 Detailed scorecards are available in file: {report_file}")
+            print("📧 Email not sent to the Judge Panel.\n")
 
-        print("✅ Orchestrator: Analysis complete.")
-
-        return {"success": True, "report": self.final_report, "overall_score": overall_score}
+        return {
+            "success": True,
+            "report": self.final_report,
+            "overall_score": overall_score,
+            "report_file": report_file
+        }
